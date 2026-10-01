@@ -4,20 +4,13 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.toRoute
-import com.plataformasmoviles.rickandmorty.screens.CharacterDetailScreen
-import com.plataformasmoviles.rickandmorty.screens.CharactersScreen
 import com.plataformasmoviles.rickandmorty.screens.LoginScreen
-import android.app.Activity
-import androidx.compose.ui.platform.LocalContext
+import com.plataformasmoviles.rickandmorty.screens.MainScreen
 
 @Composable
 fun AppNavigation() {
 
     val navController = rememberNavController()
-
-    val context = LocalContext.current
-    val activity = context as? Activity
 
     NavHost(
         navController = navController,
@@ -29,7 +22,7 @@ fun AppNavigation() {
             LoginScreen(
                 onStartClick = {
 
-                    navController.navigate(CharactersDestination) {
+                    navController.navigate(MainDestination) {
 
                         popUpTo<LoginDestination> {
                             inclusive = true
@@ -39,32 +32,19 @@ fun AppNavigation() {
             )
         }
 
-        composable<CharactersDestination> {
+        composable<MainDestination> {
 
-            CharactersScreen(
-                onCharacterClick = { characterId ->
+            MainScreen(
+                onLogout = {
 
-                    navController.navigate(
-                        CharacterDetailDestination(
-                            id = characterId
-                        )
-                    )
-                },
-                onBack = {
-                    activity?.finishAndRemoveTask()
-                }
-            )
-        }
+                    navController.navigate(LoginDestination) {
 
-        composable<CharacterDetailDestination> { backStackEntry ->
+                        popUpTo<MainDestination> {
+                            inclusive = true
+                        }
 
-            val destination =
-                backStackEntry.toRoute<CharacterDetailDestination>()
-
-            CharacterDetailScreen(
-                characterId = destination.id,
-                onBackClick = {
-                    navController.popBackStack()
+                        launchSingleTop = true
+                    }
                 }
             )
         }
