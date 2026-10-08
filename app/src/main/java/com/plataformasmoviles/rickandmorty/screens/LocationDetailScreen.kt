@@ -24,28 +24,24 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.plataformasmoviles.rickandmorty.data.LocationDb
-import com.plataformasmoviles.rickandmorty.ui.theme.RickAndMortyTheme
+import com.plataformasmoviles.rickandmorty.components.ErrorContent
+import com.plataformasmoviles.rickandmorty.components.LoadingContent
+import com.plataformasmoviles.rickandmorty.viewmodel.LocationDetailUiState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LocationDetailScreen(
-    locationId: Int,
-    onBackClick: () -> Unit
+    uiState: LocationDetailUiState,
+    onBackClick: () -> Unit,
+    onRetry: () -> Unit,
+    onLoadingClick: () -> Unit
 ) {
-    val locationDb = LocationDb()
-    val location = locationDb.getLocationById(locationId)
-
     Scaffold(
         topBar = {
             TopAppBar(
-                title = {
-                    Text("Location details")
-                },
+                title = { Text("Location details") },
                 navigationIcon = {
-                    IconButton(
-                        onClick = onBackClick
-                    ) {
+                    IconButton(onClick = onBackClick) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Regresar",
@@ -65,44 +61,51 @@ fun LocationDetailScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            when {
+                uiState.hasError -> {
+                    ErrorContent(onRetryClick = onRetry)
+                }
 
-            Spacer(
-                modifier = Modifier.height(24.dp)
-            )
+                uiState.isLoading -> {
+                    LoadingContent(onLoadingClick = onLoadingClick)
+                }
 
-            Text(
-                text = location.name,
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
-            )
+                uiState.data != null -> {
+                    val location = uiState.data
 
-            Spacer(
-                modifier = Modifier.height(32.dp)
-            )
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Spacer(modifier = Modifier.height(24.dp))
 
-            LocationInformationRow(
-                label = "ID:",
-                value = location.id.toString()
-            )
+                        Text(
+                            text = location.name,
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold
+                        )
 
-            LocationInformationRow(
-                label = "Type:",
-                value = location.type
-            )
+                        Spacer(modifier = Modifier.height(32.dp))
 
-            LocationInformationRow(
-                label = "Dimension:",
-                value = location.dimension
-            )
+                        LocationDetailRow("ID:", location.id.toString())
+                        LocationDetailRow("Type:", location.type)
+                        LocationDetailRow("Dimension:", location.dimension)
+                    }
+                }
+
+                else -> {
+                    ErrorContent(onRetryClick = onRetry)
+                }
+            }
         }
     }
 }
 
 @Composable
-private fun LocationInformationRow(
+private fun LocationDetailRow(
     label: String,
     value: String
 ) {
@@ -112,31 +115,26 @@ private fun LocationInformationRow(
             .padding(vertical = 8.dp),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-
         Text(
             text = label,
-            style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-
         Text(
             text = value,
-            style = MaterialTheme.typography.bodyLarge,
             fontWeight = FontWeight.Medium
         )
     }
 }
 
-@Preview(
-    showBackground = true,
-    showSystemUi = true
-)
+@Preview(showBackground = true)
 @Composable
-private fun LocationDetailScreenPreview() {
-    RickAndMortyTheme {
+private fun LocationDetailLoadingPreview() {
+    MaterialTheme {
         LocationDetailScreen(
-            locationId = 2,
-            onBackClick = {}
+            uiState = LocationDetailUiState(),
+            onBackClick = {},
+            onRetry = {},
+            onLoadingClick = {}
         )
     }
 }

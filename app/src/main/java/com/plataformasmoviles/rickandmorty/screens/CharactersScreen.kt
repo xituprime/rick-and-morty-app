@@ -1,7 +1,7 @@
 package com.plataformasmoviles.rickandmorty.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -26,19 +26,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import com.plataformasmoviles.rickandmorty.data.CharacterRepository
+import com.plataformasmoviles.rickandmorty.components.ErrorContent
+import com.plataformasmoviles.rickandmorty.components.LoadingContent
 import com.plataformasmoviles.rickandmorty.model.Character
-import androidx.activity.compose.BackHandler
+import com.plataformasmoviles.rickandmorty.viewmodel.CharactersUiState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CharactersScreen(
+    uiState: CharactersUiState,
     onCharacterClick: (Int) -> Unit,
+    onRetry: () -> Unit,
+    onLoadingClick: () -> Unit,
     onBack: () -> Unit
 ) {
-
     BackHandler {
         onBack()
     }
@@ -46,11 +50,7 @@ fun CharactersScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = {
-                    Text(
-                        text = "Characters"
-                    )
-                },
+                title = { Text("Characters") },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     titleContentColor = MaterialTheme.colorScheme.onPrimary
@@ -59,26 +59,36 @@ fun CharactersScreen(
         }
     ) { innerPadding ->
 
-        LazyColumn(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            items(
-                items = CharacterRepository.characters,
-                key = { character ->
-                    character.id
+            when {
+                uiState.hasError -> {
+                    ErrorContent(onRetryClick = onRetry)
                 }
-            ) { character ->
 
-                CharacterItem(
-                    character = character,
-                    onClick = {
-                        onCharacterClick(character.id)
+                uiState.isLoading -> {
+                    LoadingContent(onLoadingClick = onLoadingClick)
+                }
+
+                else -> {
+                    LazyColumn {
+                        items(
+                            items = uiState.data,
+                            key = { it.id }
+                        ) { character ->
+                            CharacterItem(
+                                character = character,
+                                onClick = {
+                                    onCharacterClick(character.id)
+                                }
+                            )
+                            HorizontalDivider()
+                        }
                     }
-                )
-
-                HorizontalDivider()
+                }
             }
         }
     }
@@ -92,16 +102,10 @@ private fun CharacterItem(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable {
-                onClick()
-            }
-            .padding(
-                horizontal = 16.dp,
-                vertical = 12.dp
-            ),
+            .clickable { onClick() }
+            .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-
         AsyncImage(
             model = character.image,
             contentDescription = character.name,
@@ -111,14 +115,9 @@ private fun CharacterItem(
             contentScale = ContentScale.Crop
         )
 
-        Spacer(
-            modifier = Modifier.width(16.dp)
-        )
+        Spacer(modifier = Modifier.width(16.dp))
 
-        Column(
-            verticalArrangement = Arrangement.Center
-        ) {
-
+        Column {
             Text(
                 text = character.name,
                 style = MaterialTheme.typography.titleMedium,
@@ -127,15 +126,44 @@ private fun CharacterItem(
 
             Text(
                 text = "${character.species} - ${character.status}",
-                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
             Text(
                 text = character.gender,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                style = MaterialTheme.typography.bodySmall
             )
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun CharactersLoadingPreview() {
+    MaterialTheme {
+        CharactersScreen(
+            uiState = CharactersUiState(),
+            onCharacterClick = {},
+            onRetry = {},
+            onLoadingClick = {},
+            onBack = {}
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun CharactersErrorPreview() {
+    MaterialTheme {
+        CharactersScreen(
+            uiState = CharactersUiState(
+                isLoading = false,
+                hasError = true
+            ),
+            onCharacterClick = {},
+            onRetry = {},
+            onLoadingClick = {},
+            onBack = {}
+        )
     }
 }

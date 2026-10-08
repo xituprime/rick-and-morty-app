@@ -19,24 +19,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.plataformasmoviles.rickandmorty.data.LocationDb
+import com.plataformasmoviles.rickandmorty.components.ErrorContent
+import com.plataformasmoviles.rickandmorty.components.LoadingContent
 import com.plataformasmoviles.rickandmorty.model.Location
-import com.plataformasmoviles.rickandmorty.ui.theme.RickAndMortyTheme
+import com.plataformasmoviles.rickandmorty.viewmodel.LocationsUiState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LocationsScreen(
-    onLocationClick: (Int) -> Unit
+    uiState: LocationsUiState,
+    onLocationClick: (Int) -> Unit,
+    onRetry: () -> Unit,
+    onLoadingClick: () -> Unit
 ) {
-    val locationDb = LocationDb()
-    val locations = locationDb.getAllLocations()
-
     Scaffold(
         topBar = {
             TopAppBar(
-                title = {
-                    Text("Locations")
-                },
+                title = { Text("Locations") },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     titleContentColor = MaterialTheme.colorScheme.onPrimary
@@ -45,26 +44,36 @@ fun LocationsScreen(
         }
     ) { innerPadding ->
 
-        LazyColumn(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            items(
-                items = locations,
-                key = { location ->
-                    location.id
+            when {
+                uiState.hasError -> {
+                    ErrorContent(onRetryClick = onRetry)
                 }
-            ) { location ->
 
-                LocationItem(
-                    location = location,
-                    onClick = {
-                        onLocationClick(location.id)
+                uiState.isLoading -> {
+                    LoadingContent(onLoadingClick = onLoadingClick)
+                }
+
+                else -> {
+                    LazyColumn {
+                        items(
+                            items = uiState.data,
+                            key = { it.id }
+                        ) { location ->
+                            LocationItem(
+                                location = location,
+                                onClick = {
+                                    onLocationClick(location.id)
+                                }
+                            )
+                            HorizontalDivider()
+                        }
                     }
-                )
-
-                HorizontalDivider()
+                }
             }
         }
     }
@@ -78,15 +87,12 @@ private fun LocationItem(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable {
-                onClick()
-            }
+            .clickable { onClick() }
             .padding(
                 horizontal = 16.dp,
                 vertical = 14.dp
             )
     ) {
-
         Text(
             text = location.name,
             style = MaterialTheme.typography.titleMedium,
@@ -101,15 +107,15 @@ private fun LocationItem(
     }
 }
 
-@Preview(
-    showBackground = true,
-    showSystemUi = true
-)
+@Preview(showBackground = true)
 @Composable
-private fun LocationsScreenPreview() {
-    RickAndMortyTheme {
+private fun LocationsLoadingPreview() {
+    MaterialTheme {
         LocationsScreen(
-            onLocationClick = {}
+            uiState = LocationsUiState(),
+            onLocationClick = {},
+            onRetry = {},
+            onLoadingClick = {}
         )
     }
 }

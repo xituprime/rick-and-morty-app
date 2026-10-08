@@ -24,6 +24,7 @@ import com.plataformasmoviles.rickandmorty.navigation.ProfileDestination
 import com.plataformasmoviles.rickandmorty.navigation.charactersNavigation
 import com.plataformasmoviles.rickandmorty.navigation.locationsNavigation
 import com.plataformasmoviles.rickandmorty.ui.theme.RickAndMortyTheme
+import androidx.navigation.NavGraph.Companion.findStartDestination
 
 @Composable
 fun MainScreen(
@@ -62,17 +63,19 @@ fun MainScreen(
 
                 onCharactersClick = {
                     navController.navigate(CharactersGraph) {
-                        launchSingleTop = true
-                        restoreState = true
-
-                        popUpTo(CharactersGraph) {
+                        popUpTo(navController.graph.findStartDestination().id) {
                             saveState = true
                         }
+                        launchSingleTop = true
+                        restoreState = true
                     }
                 },
 
                 onLocationsClick = {
                     navController.navigate(LocationsGraph) {
+                        popUpTo(navController.graph.findStartDestination().id) {
+                            saveState = true
+                        }
                         launchSingleTop = true
                         restoreState = true
                     }
@@ -80,6 +83,9 @@ fun MainScreen(
 
                 onProfileClick = {
                     navController.navigate(ProfileDestination) {
+                        popUpTo(navController.graph.findStartDestination().id) {
+                            saveState = true
+                        }
                         launchSingleTop = true
                         restoreState = true
                     }
