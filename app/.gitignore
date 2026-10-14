@@ -1,1 +1,4 @@
 /build
+# Configuraciones locales de Android Studio
+.idea/deviceManager.xml
+.idea/inspectionProfiles/

@@ -28,6 +28,7 @@ import com.plataformasmoviles.rickandmorty.ui.theme.RickAndMortyTheme
 
 @Composable
 fun ProfileScreen(
+    userName: String,
     onLogoutClick: () -> Unit
 ) {
     Scaffold { innerPadding ->
@@ -63,7 +64,7 @@ fun ProfileScreen(
 
             ProfileInformationRow(
                 label = "Nombre:",
-                value = "Axel Xitumul"
+                value = userName
             )
 
             ProfileInformationRow(
@@ -119,6 +120,7 @@ private fun ProfileInformationRow(
 private fun ProfileScreenPreview() {
     RickAndMortyTheme {
         ProfileScreen(
+            userName = "Axel Xitumul",
             onLogoutClick = {}
         )
     }

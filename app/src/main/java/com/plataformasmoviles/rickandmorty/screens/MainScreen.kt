@@ -28,6 +28,7 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 
 @Composable
 fun MainScreen(
+    userName: String,
     onLogout: () -> Unit
 ) {
 
@@ -114,6 +115,7 @@ fun MainScreen(
             composable<ProfileDestination> {
 
                 ProfileScreen(
+                    userName = userName,
                     onLogoutClick = onLogout
                 )
             }
@@ -129,6 +131,7 @@ fun MainScreen(
 private fun MainScreenPreview() {
     RickAndMortyTheme {
         MainScreen(
+            userName = "Axel Xitumul",
             onLogout = {}
         )
     }
