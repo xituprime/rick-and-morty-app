@@ -1,14 +1,15 @@
 package com.plataformasmoviles.rickandmorty.viewmodel
 
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.SavedStateHandle
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
-import com.plataformasmoviles.rickandmorty.data.LocationDb
+import com.plataformasmoviles.rickandmorty.data.local.AppDatabase
+import com.plataformasmoviles.rickandmorty.data.local.toModel
 import com.plataformasmoviles.rickandmorty.model.Location
 import com.plataformasmoviles.rickandmorty.navigation.LocationDetailDestination
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,16 +22,21 @@ data class LocationDetailUiState(
 )
 
 class LocationDetailViewModel(
+    application: Application,
     savedStateHandle: SavedStateHandle
-) : ViewModel() {
+) : AndroidViewModel(application) {
+
+    private val locationDao =
+        AppDatabase.getDatabase(application).locationDao()
 
     private val locationId =
         savedStateHandle.toRoute<LocationDetailDestination>().id
 
-    private val locationDb = LocationDb()
+    private val _uiState =
+        MutableStateFlow(LocationDetailUiState())
 
-    private val _uiState = MutableStateFlow(LocationDetailUiState())
-    val uiState: StateFlow<LocationDetailUiState> = _uiState.asStateFlow()
+    val uiState: StateFlow<LocationDetailUiState> =
+        _uiState.asStateFlow()
 
     private var loadingJob: Job? = null
 
@@ -40,20 +46,28 @@ class LocationDetailViewModel(
 
     fun loadLocation() {
         loadingJob?.cancel()
-        _uiState.value = LocationDetailUiState(isLoading = true)
+
+        _uiState.value = LocationDetailUiState(
+            isLoading = true
+        )
 
         loadingJob = viewModelScope.launch {
-            delay(2000)
+            try {
+                locationDao.getLocationById(locationId)
+                    .collect { entity ->
 
-            val location = runCatching {
-                locationDb.getLocationById(locationId)
-            }.getOrNull()
-
-            _uiState.value = LocationDetailUiState(
-                isLoading = false,
-                data = location,
-                hasError = location == null
-            )
+                        _uiState.value = LocationDetailUiState(
+                            isLoading = false,
+                            data = entity?.toModel(),
+                            hasError = entity == null
+                        )
+                    }
+            } catch (e: Exception) {
+                _uiState.value = LocationDetailUiState(
+                    isLoading = false,
+                    hasError = true
+                )
+            }
         }
     }
 

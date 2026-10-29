@@ -33,12 +33,23 @@ import com.plataformasmoviles.rickandmorty.components.ErrorContent
 import com.plataformasmoviles.rickandmorty.components.LoadingContent
 import com.plataformasmoviles.rickandmorty.model.Character
 import com.plataformasmoviles.rickandmorty.viewmodel.CharactersUiState
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CharactersScreen(
     uiState: CharactersUiState,
     onCharacterClick: (Int) -> Unit,
+    onFavoriteClick: (Int) -> Unit,
+    onFilterClick: () -> Unit,
     onRetry: () -> Unit,
     onLoadingClick: () -> Unit,
     onBack: () -> Unit
@@ -64,6 +75,32 @@ fun CharactersScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+                horizontalArrangement = Arrangement.End
+            ) {
+                Button(
+                    onClick = onFilterClick
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Favorite,
+                        contentDescription = null
+                    )
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Text(
+                        if (uiState.showOnlyFavorites) {
+                            "Mostrar todos"
+                        } else {
+                            "Solo favoritos"
+                        }
+                    )
+                }
+            }
             when {
                 uiState.hasError -> {
                     ErrorContent(onRetryClick = onRetry)
@@ -79,10 +116,15 @@ fun CharactersScreen(
                             items = uiState.data,
                             key = { it.id }
                         ) { character ->
+
                             CharacterItem(
                                 character = character,
+                                isFavorite = character.id in uiState.favorites,
                                 onClick = {
                                     onCharacterClick(character.id)
+                                },
+                                onFavoriteClick = {
+                                    onFavoriteClick(character.id)
                                 }
                             )
                             HorizontalDivider()
@@ -94,10 +136,13 @@ fun CharactersScreen(
     }
 }
 
+
 @Composable
 private fun CharacterItem(
     character: Character,
-    onClick: () -> Unit
+    isFavorite: Boolean,
+    onClick: () -> Unit,
+    onFavoriteClick: () -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -117,7 +162,9 @@ private fun CharacterItem(
 
         Spacer(modifier = Modifier.width(16.dp))
 
-        Column {
+        Column(
+            modifier = Modifier.weight(1f)
+        ) {
             Text(
                 text = character.name,
                 style = MaterialTheme.typography.titleMedium,
@@ -134,8 +181,31 @@ private fun CharacterItem(
                 style = MaterialTheme.typography.bodySmall
             )
         }
+
+        IconButton(
+            onClick = onFavoriteClick
+        ) {
+            Icon(
+                imageVector = if (isFavorite) {
+                    Icons.Default.Favorite
+                } else {
+                    Icons.Default.FavoriteBorder
+                },
+                contentDescription = if (isFavorite) {
+                    "Quitar de favoritos"
+                } else {
+                    "Agregar a favoritos"
+                },
+                tint = if (isFavorite) {
+                    MaterialTheme.colorScheme.error
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                }
+            )
+        }
     }
 }
+
 
 @Preview(showBackground = true)
 @Composable
@@ -146,7 +216,9 @@ private fun CharactersLoadingPreview() {
             onCharacterClick = {},
             onRetry = {},
             onLoadingClick = {},
-            onBack = {}
+            onBack = {},
+            onFavoriteClick = {},
+            onFilterClick = {}
         )
     }
 }
@@ -163,7 +235,9 @@ private fun CharactersErrorPreview() {
             onCharacterClick = {},
             onRetry = {},
             onLoadingClick = {},
-            onBack = {}
+            onBack = {},
+            onFavoriteClick = {},
+            onFilterClick = {}
         )
     }
 }

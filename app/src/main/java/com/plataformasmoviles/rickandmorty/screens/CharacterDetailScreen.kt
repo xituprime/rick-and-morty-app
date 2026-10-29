@@ -32,6 +32,8 @@ import coil3.compose.AsyncImage
 import com.plataformasmoviles.rickandmorty.components.ErrorContent
 import com.plataformasmoviles.rickandmorty.components.LoadingContent
 import com.plataformasmoviles.rickandmorty.viewmodel.CharacterDetailUiState
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,7 +41,8 @@ fun CharacterDetailScreen(
     uiState: CharacterDetailUiState,
     onBackClick: () -> Unit,
     onRetry: () -> Unit,
-    onLoadingClick: () -> Unit
+    onLoadingClick: () -> Unit,
+    onFavoriteClick: () -> Unit
 ) {
     Scaffold(
         topBar = {
@@ -104,6 +107,30 @@ fun CharacterDetailScreen(
                             fontWeight = FontWeight.Bold
                         )
 
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        IconButton(
+                            onClick = onFavoriteClick
+                        ) {
+                            Icon(
+                                imageVector = if (uiState.isFavorite) {
+                                    Icons.Default.Favorite
+                                } else {
+                                    Icons.Default.FavoriteBorder
+                                },
+                                contentDescription = if (uiState.isFavorite) {
+                                    "Quitar de favoritos"
+                                } else {
+                                    "Agregar a favoritos"
+                                },
+                                tint = if (uiState.isFavorite) {
+                                    MaterialTheme.colorScheme.error
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface
+                                }
+                            )
+                        }
+
                         Spacer(modifier = Modifier.height(32.dp))
 
                         CharacterDetailRow("Species:", character.species)
@@ -147,7 +174,8 @@ private fun CharacterDetailLoadingPreview() {
             uiState = CharacterDetailUiState(),
             onBackClick = {},
             onRetry = {},
-            onLoadingClick = {}
+            onLoadingClick = {},
+            onFavoriteClick = {}
         )
     }
 }

@@ -45,6 +45,14 @@ fun NavGraphBuilder.charactersNavigation(
                     charactersViewModel.simulateError()
                 },
 
+                onFavoriteClick = { characterId ->
+                    charactersViewModel.toggleFavorite(characterId)
+                },
+
+                onFilterClick = {
+                    charactersViewModel.toggleFavoritesFilter()
+                },
+
                 onBack = onExitApp
             )
         }
@@ -69,6 +77,10 @@ fun NavGraphBuilder.charactersNavigation(
 
                 onLoadingClick = {
                     detailViewModel.simulateError()
+                },
+
+                onFavoriteClick = {
+                    detailViewModel.toggleFavorite()
                 }
             )
         }

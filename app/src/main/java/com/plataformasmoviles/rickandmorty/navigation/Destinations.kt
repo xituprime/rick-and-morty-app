@@ -12,6 +12,9 @@ object LoginDestination
 @Serializable
 object MainDestination
 
+@Serializable
+object SyncDestination
+
 
 // -------------------------
 // Bottom Navigation

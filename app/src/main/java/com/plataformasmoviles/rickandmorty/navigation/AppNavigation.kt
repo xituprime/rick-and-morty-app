@@ -1,9 +1,8 @@
-
 package com.plataformasmoviles.rickandmorty.navigation
 
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -12,8 +11,11 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.plataformasmoviles.rickandmorty.data.UserPreferencesRepository
+import com.plataformasmoviles.rickandmorty.data.local.AppDatabase
+import com.plataformasmoviles.rickandmorty.data.local.InitialDataSync
 import com.plataformasmoviles.rickandmorty.screens.LoginScreen
 import com.plataformasmoviles.rickandmorty.screens.MainScreen
+import com.plataformasmoviles.rickandmorty.screens.SyncScreen
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -26,10 +28,18 @@ fun AppNavigation() {
         UserPreferencesRepository(context)
     }
 
+    val database = remember(context) {
+        AppDatabase.getDatabase(context)
+    }
+
+    val initialDataSync = remember(database) {
+        InitialDataSync(database)
+    }
+
     val scope = rememberCoroutineScope()
     val navController = rememberNavController()
 
-    var initialUserName by remember {
+    var userName by remember {
         mutableStateOf<String?>(null)
     }
 
@@ -37,29 +47,36 @@ fun AppNavigation() {
         mutableStateOf(true)
     }
 
+    var isLoggingOut by remember {
+        mutableStateOf(false)
+    }
+
     LaunchedEffect(repository) {
-        initialUserName = repository.userName.first()
+        userName = repository.userName.first()
         isLoading = false
     }
 
     if (isLoading) {
+
         Box(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
             CircularProgressIndicator()
         }
+
     } else {
 
         NavHost(
             navController = navController,
-            startDestination = if (initialUserName.isNullOrBlank()) {
+            startDestination = if (userName.isNullOrBlank()) {
                 LoginDestination
             } else {
-                MainDestination
+                SyncDestination
             }
         ) {
 
+            // Pantalla de inicio de sesion
             composable<LoginDestination> {
 
                 LoginScreen(
@@ -67,9 +84,9 @@ fun AppNavigation() {
 
                         scope.launch {
                             repository.saveUserName(name)
-                            initialUserName = name
+                            userName = name
 
-                            navController.navigate(MainDestination) {
+                            navController.navigate(SyncDestination) {
                                 popUpTo<LoginDestination> {
                                     inclusive = true
                                 }
@@ -80,24 +97,69 @@ fun AppNavigation() {
                 )
             }
 
+            // Pantalla de sincronizacion
+            composable<SyncDestination> {
+
+                LaunchedEffect(Unit) {
+
+                    initialDataSync.synchronize()
+
+                    navController.navigate(MainDestination) {
+                        popUpTo<SyncDestination> {
+                            inclusive = true
+                        }
+                        launchSingleTop = true
+                    }
+                }
+
+                SyncScreen()
+            }
+
+            // Pantalla principal
             composable<MainDestination> {
 
                 MainScreen(
-                    userName = initialUserName.orEmpty(),
+                    userName = userName.orEmpty(),
+
+
                     onLogout = {
+                        if (!isLoggingOut) {
+                            isLoggingOut = true
 
-                        scope.launch {
-                            repository.clearUserName()
-                            initialUserName =  null
+                            scope.launch {
+                                try {
+                                    // Limpiar primero los datos de Room
+                                    database.characterDao().deleteAllCharacters()
+                                    database.locationDao().deleteAllLocations()
 
-                            navController.navigate(LoginDestination) {
-                                popUpTo<MainDestination> {
-                                    inclusive = true
+                                    // Eliminar el nombre de DataStore
+                                    repository.clearUserName()
+
+                                    // Actualizar el estado
+                                    userName = null
+
+                                    // Regresar al Login y limpiar el historial
+                                    navController.navigate(LoginDestination) {
+                                        popUpTo(navController.graph.id) {
+                                            inclusive = true
+                                        }
+                                        launchSingleTop = true
+                                    }
+
+                                } catch (e: Exception) {
+                                    android.util.Log.e(
+                                        "LOGOUT_ERROR",
+                                        "Error al cerrar sesion",
+                                        e
+                                    )
+                                } finally {
+                                    isLoggingOut = false
                                 }
-                                launchSingleTop = true
                             }
                         }
                     }
+
+
                 )
             }
         }

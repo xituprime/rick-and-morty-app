@@ -1,11 +1,12 @@
 package com.plataformasmoviles.rickandmorty.viewmodel
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.plataformasmoviles.rickandmorty.data.LocationDb
+import com.plataformasmoviles.rickandmorty.data.local.AppDatabase
+import com.plataformasmoviles.rickandmorty.data.local.toModel
 import com.plataformasmoviles.rickandmorty.model.Location
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -17,12 +18,17 @@ data class LocationsUiState(
     val hasError: Boolean = false
 )
 
-class LocationsViewModel : ViewModel() {
+class LocationsViewModel(
+    application: Application
+) : AndroidViewModel(application) {
 
-    private val locationDb = LocationDb()
+    private val locationDao =
+        AppDatabase.getDatabase(application).locationDao()
 
     private val _uiState = MutableStateFlow(LocationsUiState())
-    val uiState: StateFlow<LocationsUiState> = _uiState.asStateFlow()
+
+    val uiState: StateFlow<LocationsUiState> =
+        _uiState.asStateFlow()
 
     private var loadingJob: Job? = null
 
@@ -32,16 +38,27 @@ class LocationsViewModel : ViewModel() {
 
     fun loadLocations() {
         loadingJob?.cancel()
-        _uiState.value = LocationsUiState(isLoading = true)
+
+        _uiState.value = LocationsUiState(
+            isLoading = true
+        )
 
         loadingJob = viewModelScope.launch {
-            delay(4000)
+            try {
+                locationDao.getAllLocations().collect { entities ->
 
-            _uiState.value = LocationsUiState(
-                isLoading = false,
-                data = locationDb.getAllLocations(),
-                hasError = false
-            )
+                    _uiState.value = LocationsUiState(
+                        isLoading = false,
+                        data = entities.map { it.toModel() },
+                        hasError = false
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.value = LocationsUiState(
+                    isLoading = false,
+                    hasError = true
+                )
+            }
         }
     }
 
