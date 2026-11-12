@@ -36,6 +36,10 @@ fun AppNavigation() {
         InitialDataSync(database)
     }
 
+    var errorMessage by remember {
+        mutableStateOf("")
+    }
+
     val scope = rememberCoroutineScope()
     val navController = rememberNavController()
 
@@ -46,6 +50,8 @@ fun AppNavigation() {
     var isLoading by remember {
         mutableStateOf(true)
     }
+
+    var pendingName by remember { mutableStateOf<String?>(null) }
 
     var isLoggingOut by remember {
         mutableStateOf(false)
@@ -72,7 +78,7 @@ fun AppNavigation() {
             startDestination = if (userName.isNullOrBlank()) {
                 LoginDestination
             } else {
-                SyncDestination
+                MainDestination
             }
         ) {
 
@@ -83,8 +89,7 @@ fun AppNavigation() {
                     onStartClick = { name ->
 
                         scope.launch {
-                            repository.saveUserName(name)
-                            userName = name
+                            pendingName = name
 
                             navController.navigate(SyncDestination) {
                                 popUpTo<LoginDestination> {
@@ -98,22 +103,73 @@ fun AppNavigation() {
             }
 
             // Pantalla de sincronizacion
+
             composable<SyncDestination> {
 
-                LaunchedEffect(Unit) {
+                var syncError by remember {
+                    mutableStateOf(false)
+                }
 
-                    initialDataSync.synchronize()
+                var retryCount by remember {
+                    mutableIntStateOf(0)
+                }
 
-                    navController.navigate(MainDestination) {
-                        popUpTo<SyncDestination> {
-                            inclusive = true
+                LaunchedEffect(retryCount) {
+                    syncError = false
+
+                    try {
+                        initialDataSync.synchronize()
+                        pendingName?.let { name ->
+                            repository.saveUserName(name)
+                            userName = name
+                            pendingName = null
                         }
-                        launchSingleTop = true
+
+                        navController.navigate(MainDestination) {
+                            popUpTo<SyncDestination> {
+                                inclusive = true
+                            }
+                            launchSingleTop = true
+                        }
+
+                    } catch (e: Exception) {
+                        if (e is kotlinx.coroutines.CancellationException) {
+                            throw e
+                        }
+
+                        android.util.Log.e(
+                            "SYNC_ERROR",
+                            "Error durante la sincronizacion",
+                            e
+                        )
+
+                        errorMessage = e.message ?: e.javaClass.simpleName
+                        syncError = true
                     }
                 }
 
-                SyncScreen()
+                if (syncError) {
+                    androidx.compose.foundation.layout.Column(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement =
+                            androidx.compose.foundation.layout.Arrangement.Center
+                    ) {
+                        androidx.compose.material3.Text(
+                            text = "Error: $errorMessage"
+                        )
+
+                        androidx.compose.material3.Button(
+                            onClick = { retryCount++ }
+                        ) {
+                            androidx.compose.material3.Text("Reintentar")
+                        }
+                    }
+                } else {
+                    SyncScreen()
+                }
             }
+
 
             // Pantalla principal
             composable<MainDestination> {

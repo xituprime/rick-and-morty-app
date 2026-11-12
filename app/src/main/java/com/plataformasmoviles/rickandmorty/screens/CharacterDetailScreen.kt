@@ -1,5 +1,7 @@
 package com.plataformasmoviles.rickandmorty.screens
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -34,6 +36,11 @@ import com.plataformasmoviles.rickandmorty.components.LoadingContent
 import com.plataformasmoviles.rickandmorty.viewmodel.CharacterDetailUiState
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,8 +49,14 @@ fun CharacterDetailScreen(
     onBackClick: () -> Unit,
     onRetry: () -> Unit,
     onLoadingClick: () -> Unit,
-    onFavoriteClick: () -> Unit
+    onFavoriteClick: () -> Unit,
+    onEditClick: () -> Unit,
+    onDeleteClick: () -> Unit
 ) {
+    var showDeleteDialog by remember {
+        mutableStateOf(false)
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -85,6 +98,7 @@ fun CharacterDetailScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
+                            .verticalScroll(rememberScrollState())
                             .padding(24.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
@@ -136,6 +150,25 @@ fun CharacterDetailScreen(
                         CharacterDetailRow("Species:", character.species)
                         CharacterDetailRow("Status:", character.status)
                         CharacterDetailRow("Gender:", character.gender)
+
+                        Spacer(modifier = Modifier.height(24.dp))
+
+                        Button(
+                            onClick = onEditClick,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Editar personaje")
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        OutlinedButton(
+                            onClick = { showDeleteDialog = true },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Eliminar personaje")
+                        }
+
                     }
                 }
 
@@ -145,6 +178,40 @@ fun CharacterDetailScreen(
             }
         }
     }
+
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showDeleteDialog = false
+            },
+            title = {
+                Text("Eliminar personaje")
+            },
+            text = {
+                Text("¿Seguro que deseas eliminar este personaje?")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteDialog = false
+                        onDeleteClick()
+                    }
+                ) {
+                    Text("Eliminar")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteDialog = false
+                    }
+                ) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
 }
 
 @Composable
@@ -175,7 +242,9 @@ private fun CharacterDetailLoadingPreview() {
             onBackClick = {},
             onRetry = {},
             onLoadingClick = {},
-            onFavoriteClick = {}
+            onFavoriteClick = {},
+            onEditClick = {},
+            onDeleteClick = {}
         )
     }
 }

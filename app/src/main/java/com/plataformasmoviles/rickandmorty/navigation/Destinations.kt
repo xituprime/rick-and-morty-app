@@ -43,6 +43,15 @@ data class CharacterDetailDestination(
 )
 
 
+@Serializable
+object CreateCharacterDestination
+
+@Serializable
+data class EditCharacterDestination(
+    val id: Int
+)
+
+
 // -------------------------
 // Locations nested graph
 // -------------------------

@@ -18,7 +18,8 @@ import kotlinx.coroutines.launch
 data class LocationDetailUiState(
     val isLoading: Boolean = true,
     val data: Location? = null,
-    val hasError: Boolean = false
+    val hasError: Boolean = false,
+    val isFavorite: Boolean = false
 )
 
 class LocationDetailViewModel(
@@ -59,7 +60,8 @@ class LocationDetailViewModel(
                         _uiState.value = LocationDetailUiState(
                             isLoading = false,
                             data = entity?.toModel(),
-                            hasError = entity == null
+                            hasError = entity == null,
+                            isFavorite = entity?.isFavorite ?: false
                         )
                     }
             } catch (e: Exception) {
@@ -67,6 +69,15 @@ class LocationDetailViewModel(
                     isLoading = false,
                     hasError = true
                 )
+            }
+        }
+    }
+
+    fun toggleFavorite() {
+        viewModelScope.launch {
+            val current = _uiState.value
+            if (current.data != null) {
+                locationDao.updateFavorite(locationId, !current.isFavorite)
             }
         }
     }

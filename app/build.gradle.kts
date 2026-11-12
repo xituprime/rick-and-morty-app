@@ -63,7 +63,8 @@ dependencies {
 
     implementation(libs.androidx.navigation.compose)
 
-
+    implementation(libs.retrofit.core)
+    implementation(libs.retrofit.gson)
     implementation(libs.kotlinx.serialization.json)
 
 

@@ -12,10 +12,19 @@ import com.plataformasmoviles.rickandmorty.screens.CharacterDetailScreen
 import com.plataformasmoviles.rickandmorty.screens.CharactersScreen
 import com.plataformasmoviles.rickandmorty.viewmodel.CharacterDetailViewModel
 import com.plataformasmoviles.rickandmorty.viewmodel.CharactersViewModel
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
+import com.plataformasmoviles.rickandmorty.data.local.AppDatabase
+import com.plataformasmoviles.rickandmorty.data.local.toModel
+import com.plataformasmoviles.rickandmorty.screens.CharacterFormScreen
+import kotlinx.coroutines.flow.first
+import androidx.navigation.toRoute
 
 fun NavGraphBuilder.charactersNavigation(
     navController: NavHostController,
-    onExitApp: () -> Unit
+    onExitApp: () -> Unit,
+
 ) {
     navigation<CharactersGraph>(
         startDestination = CharactersDestination
@@ -52,7 +61,9 @@ fun NavGraphBuilder.charactersNavigation(
                 onFilterClick = {
                     charactersViewModel.toggleFavoritesFilter()
                 },
-
+                onCreateClick = {
+                    navController.navigate(CreateCharacterDestination)
+                },
                 onBack = onExitApp
             )
         }
@@ -81,8 +92,110 @@ fun NavGraphBuilder.charactersNavigation(
 
                 onFavoriteClick = {
                     detailViewModel.toggleFavorite()
+                },
+
+                onEditClick = {
+                    uiState.data?.let { character ->
+                        navController.navigate(
+                            EditCharacterDestination(character.id)
+                        )
+                    }
+                },
+
+                onDeleteClick = {
+                    uiState.data?.let { character ->
+                        val listEntry = navController.getBackStackEntry(
+                            CharactersDestination
+                        )
+
+                        val charactersViewModel: CharactersViewModel =
+                            androidx.lifecycle.ViewModelProvider(
+                                listEntry
+                            )[CharactersViewModel::class.java]
+
+                        charactersViewModel.deleteCharacter(character.id) {
+                            navController.popBackStack()
+                        }
+                    }
+                },
+            )
+        }
+
+        composable<CreateCharacterDestination> {
+
+            val charactersViewModel: CharactersViewModel = viewModel()
+
+            CharacterFormScreen(
+                onSave = { name, species, status, image, gender ->
+
+                    charactersViewModel.createCharacter(
+                        name = name,
+                        species = species,
+                        status = status,
+                        image = image,
+                        gender = gender,
+                        onSuccess = {
+                            navController.popBackStack()
+                        }
+                    )
+                },
+
+                onCancel = {
+                    navController.popBackStack()
                 }
             )
         }
+
+        composable<EditCharacterDestination> { backStackEntry ->
+
+            val route = backStackEntry
+                .toRoute<EditCharacterDestination>()
+
+            val context = LocalContext.current.applicationContext
+
+            val dao = remember(context) {
+                AppDatabase.getDatabase(context).characterDao()
+            }
+
+            val character by produceState<
+                    com.plataformasmoviles.rickandmorty.model.Character?
+                    >(
+                initialValue = null,
+                key1 = route.id
+            ) {
+                value = dao.getCharacterById(route.id)
+                    .first()
+                    ?.toModel()
+            }
+
+            val charactersViewModel: CharactersViewModel = viewModel()
+
+            character?.let { currentCharacter ->
+
+                CharacterFormScreen(
+                    character = currentCharacter,
+
+                    onSave = { name, species, status, image, gender ->
+
+                        charactersViewModel.updateCharacter(
+                            id = route.id,
+                            name = name,
+                            species = species,
+                            status = status,
+                            image = image,
+                            gender = gender,
+                            onSuccess = {
+                                navController.popBackStack()
+                            }
+                        )
+                    },
+
+                    onCancel = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+        }
+
     }
 }

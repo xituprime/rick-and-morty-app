@@ -35,6 +35,9 @@ fun NavGraphBuilder.locationsNavigation(
                     )
                 },
 
+                onFavoriteClick = { id -> locationsViewModel.toggleFavorite(id) },
+                onFilterClick = { filter -> locationsViewModel.setFilter(filter) },
+
                 onRetry = {
                     locationsViewModel.loadLocations()
                 },
@@ -54,6 +57,8 @@ fun NavGraphBuilder.locationsNavigation(
 
             LocationDetailScreen(
                 uiState = uiState,
+
+                onFavoriteClick = { detailViewModel.toggleFavorite() },
 
                 onBackClick = {
                     navController.popBackStack()

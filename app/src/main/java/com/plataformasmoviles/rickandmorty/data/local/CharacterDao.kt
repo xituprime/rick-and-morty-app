@@ -44,4 +44,46 @@ interface CharacterDao {
     // Contar personajes guardados
     @Query("SELECT COUNT(*) FROM characters")
     suspend fun getCharacterCount(): Int
+
+    // Crear un personaje local
+    @Query("""
+        INSERT INTO characters
+        (id, name, species, status, image, gender, isFavorite)
+        VALUES (
+            (SELECT MIN(COALESCE(MIN(id), 0) - 1, -1)
+             FROM characters),
+            :name, :species, :status, :image, :gender, 0
+        )
+    """)
+    suspend fun createCharacter(
+        name: String,
+        species: String,
+        status: String,
+        image: String,
+        gender: String
+    )
+
+    // Actualizar un personaje existente
+    @Query("""
+        UPDATE characters
+        SET name = :name,
+            species = :species,
+            status = :status,
+            image = :image,
+            gender = :gender
+        WHERE id = :id
+    """)
+    suspend fun updateCharacter(
+        id: Int,
+        name: String,
+        species: String,
+        status: String,
+        image: String,
+        gender: String
+    )
+
+    // Eliminar un personaje por ID
+    @Query("DELETE FROM characters WHERE id = :id")
+    suspend fun deleteCharacter(id: Int)
+
 }

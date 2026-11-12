@@ -52,7 +52,8 @@ fun CharactersScreen(
     onFilterClick: () -> Unit,
     onRetry: () -> Unit,
     onLoadingClick: () -> Unit,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onCreateClick: () -> Unit
 ) {
     BackHandler {
         onBack()
@@ -80,7 +81,7 @@ fun CharactersScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(12.dp),
-                horizontalArrangement = Arrangement.End
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Button(
                     onClick = onFilterClick
@@ -100,6 +101,14 @@ fun CharactersScreen(
                         }
                     )
                 }
+
+                Button(
+                    onClick = onCreateClick
+                ) {
+                    Text("Agregar")
+                }
+
+                Spacer(modifier = Modifier.width(8.dp))
             }
             when {
                 uiState.hasError -> {
@@ -218,7 +227,8 @@ private fun CharactersLoadingPreview() {
             onLoadingClick = {},
             onBack = {},
             onFavoriteClick = {},
-            onFilterClick = {}
+            onFilterClick = {},
+            onCreateClick = {}
         )
     }
 }
@@ -237,7 +247,8 @@ private fun CharactersErrorPreview() {
             onLoadingClick = {},
             onBack = {},
             onFavoriteClick = {},
-            onFilterClick = {}
+            onFilterClick = {},
+            onCreateClick = {}
         )
     }
 }

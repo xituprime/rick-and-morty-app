@@ -24,6 +24,9 @@ interface LocationDao {
         locations: List<LocationEntity>
     )
 
+    @Query("UPDATE locations SET isFavorite = :favorite WHERE id = :id")
+    suspend fun updateFavorite(id: Int, favorite: Boolean)
+
     // Eliminar todas las ubicaciones
     @Query("DELETE FROM locations")
     suspend fun deleteAllLocations()
